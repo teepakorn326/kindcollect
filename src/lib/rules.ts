@@ -401,3 +401,23 @@ export function proposePaymentPlan(
     amountCents,
   }));
 }
+
+// ======================= draftAmountIssues =======================
+
+/** Every "A$1,234" / "A$1,234.56" / "$1,234" amount in a text, in cents. */
+export function amountsInText(text: string): { raw: string; cents: number }[] {
+  return [...text.matchAll(/A?\$\s?(\d{1,3}(?:,\d{3})*|\d+)(?:\.(\d{2}))?/g)].map((m) => ({
+    raw: m[0],
+    cents: Number(m[1].replace(/,/g, "")) * 100 + Number(m[2] ?? 0),
+  }));
+}
+
+/**
+ * Rules validate what the AI wrote: any amount in a draft must equal an amount we supplied as a fact.
+ * Returns the offending amounts (empty = OK to send).
+ */
+export function draftAmountIssues(text: string, allowedCents: readonly number[]): string[] {
+  return amountsInText(text)
+    .filter((a) => !allowedCents.includes(a.cents))
+    .map((a) => a.raw);
+}

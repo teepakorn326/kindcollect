@@ -10,6 +10,10 @@ import { SuggestionPanel } from "@/components/domain/SuggestionPanel";
 import { AuditTimeline } from "@/components/domain/AuditTimeline";
 import { SourceDialog } from "@/components/domain/SourceDialog";
 import { CreditNotePanel } from "@/components/queue/CreditNotePanel";
+import { PlanPanel } from "@/components/queue/PlanPanel";
+import { CaseAiTools } from "@/components/queue/CaseAiTools";
+import { PENDING_REPLIES } from "@/lib/demo/seed";
+import { proposePaymentPlan } from "@/lib/rules";
 import { followupKey, getCaseDetail, paymentKey } from "@/lib/cases";
 import { formatAud } from "@/lib/money";
 import { formatDate, formatDateTime, formatDay, formatDays, formatTime, toDateInput } from "@/lib/format";
@@ -70,6 +74,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
       : c.status === "needs_review"
         ? { label: "Awaiting review", sub: "Now" }
         : undefined;
+  const pendingReply = Object.entries(PENDING_REPLIES).find(([, r]) => r.caseId === c.id && !c.messages.some((m) => m.id === r.id));
+  const plan = c.paymentPlans.filter((p) => p.status !== "rejected").at(-1) ?? null;
+  const planRows = (rows: { sequence: number; dueDate: Date; amountCents: number }[]) =>
+    rows.map((i) => ({ sequence: i.sequence, label: formatDay(i.dueDate), amount: formatAud(i.amountCents, { cents: false }) }));
   const defaultDue = toDateInput(new Date(asOf.getTime() + c.customer.termsDays * 86_400_000));
 
   return (
@@ -175,6 +183,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
                   : `Suggested from ${sources.join(" and ")} · ${causeHint[c.cause]}`}
               </span>
             </div>
+            <CaseAiTools
+              caseId={c.id}
+              simulate={pendingReply ? { customer: pendingReply[0], label: `Demo: simulate a reply from ${pendingReply[1].fromName.split(" ")[0]}` } : undefined}
+            />
           </div>
 
           {!rejected && c.cause === "invoice_issue_ours" && openReturns.length > 0 && (
@@ -235,7 +247,18 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ cas
             </div>
           )}
 
-          {!rejected && c.cause !== "invoice_issue_ours" && (
+          {!rejected && c.cause === "cash_flow" && inv.balanceCents > 0 && (
+            <PlanPanel
+              caseId={c.id}
+              customerName={c.customer.name}
+              balanceCents={inv.balanceCents}
+              balance={formatAud(inv.balanceCents, { cents: false })}
+              plan={plan ? { id: plan.id, status: plan.status, instalments: planRows(plan.instalments) } : null}
+              preview={planRows(proposePaymentPlan(inv.balanceCents, asOf))}
+            />
+          )}
+
+          {!rejected && c.cause !== "invoice_issue_ours" && c.cause !== "cash_flow" && (
             <SuggestionPanel
               id="fix"
               title="Proposed fix"

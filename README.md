@@ -22,6 +22,15 @@ diagnoses **why** an invoice is unpaid and fixes the cause. Hackathon build — 
 | `pnpm test` | Vitest unit tests (`tests/`) |
 | `pnpm test:e2e` | Playwright demo spec (`e2e/`) against `BASE_URL` (default `http://localhost:3000`) |
 
+## AI
+
+Claude (tool use only) via `ANTHROPIC_API_KEY`. Every result is cached in `AiResult` by input hash and the cache
+survives `Reset demo data`, so click through the demo once before going on stage to warm it. If Claude is slow
+(> 8 s) or down, the cached result is used and marked "cached".
+
+Demo helpers: `POST /api/demo/simulate-reply` (`{"customer":"noodle"}` or `"bella"`), `POST /api/ai/classify`
+(`{"caseId":"kc-0041","fresh":true}`).
+
 ## Auth
 
 Set `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` to gate the whole app with HTTP Basic Auth. Everyone acts as

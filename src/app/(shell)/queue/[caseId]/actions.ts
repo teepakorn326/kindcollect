@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { dateOnly, now } from "@/lib/clock";
+import { dateOnly, now, sydneyYmd, today } from "@/lib/clock";
 import { currentUser } from "@/lib/current-user";
 import { formatAud, subtractCents } from "@/lib/money";
 import { formatDay } from "@/lib/format";
-import { creditNote } from "@/lib/rules";
+import { creditNote, proposePaymentPlan } from "@/lib/rules";
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; stale?: boolean; error: string };
 
@@ -200,5 +200,85 @@ class UserError extends Error {
     public stale = false
   ) {
     super(message);
+  }
+}
+
+// ======================= payment plans (cash-flow) =======================
+
+const proposeSchema = z.object({ caseId: z.string().min(1), expectedBalanceCents: z.number().int() });
+
+/** Draft a plan for Tony from proposePaymentPlan() (rules compute every amount and date). */
+export async function proposePlan(input: z.infer<typeof proposeSchema>): Promise<ActionResult> {
+  const parsed = proposeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  try {
+    await db.$transaction(
+      async (tx) => {
+        const c = await tx.case.findUniqueOrThrow({ where: { id: parsed.data.caseId }, include: { invoice: true, paymentPlans: true } });
+        if (c.invoice.balanceCents !== parsed.data.expectedBalanceCents) throw new UserError("The balance changed since you opened the page. Reload first.", true);
+        if (c.paymentPlans.some((p) => p.status !== "rejected")) throw new UserError("A plan already exists for this case.", true);
+        const instalments = proposePaymentPlan(c.invoice.balanceCents, today());
+        const plan = await tx.paymentPlan.create({
+          data: { customerId: c.customerId, caseId: c.id, invoiceId: c.invoiceId, status: "proposed", instalments: { create: instalments } },
+        });
+        await tx.auditEvent.create({
+          data: {
+            businessId: c.businessId, caseId: c.id, customerId: c.customerId, invoiceId: c.invoiceId, at: now(), actor: currentUser.name,
+            type: "plan_proposed", summary: `Plan drafted · ${instalments.length} × ${formatAud(instalments[0].amountCents, { cents: false })}`,
+            detail: "sent to Tony for approval",
+            data: { planId: plan.id, instalments: instalments.map((i) => ({ ...i, dueDate: sydneyYmd(i.dueDate) })) },
+          },
+        });
+      },
+      { timeout: 20_000, maxWait: 10_000 }
+    );
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof UserError) return { ok: false, error: e.message, stale: e.stale };
+    console.error("proposePlan failed", e);
+    return { ok: false, error: "Could not draft the plan. Nothing was changed." };
+  }
+}
+
+const decideSchema = z.object({ planId: z.string().min(1), decision: z.enum(["approve", "reject"]) });
+
+/** Tony's decision on a plan. Approving pauses routine reminders; no money moves until instalments arrive. */
+export async function decidePlan(input: z.infer<typeof decideSchema>): Promise<ActionResult> {
+  const parsed = decideSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid request" };
+  const { planId, decision } = parsed.data;
+  try {
+    await db.$transaction(
+      async (tx) => {
+        const plan = await tx.paymentPlan.findUniqueOrThrow({ where: { id: planId }, include: { case: true, instalments: { orderBy: { sequence: "asc" } } } });
+        if (plan.status !== "proposed") throw new UserError("This plan was already decided.", true);
+        const at = now();
+        await tx.paymentPlan.update({
+          where: { id: plan.id },
+          data: { status: decision === "approve" ? "approved" : "rejected", approvedBy: "Tony", approvedAt: at },
+        });
+        const c = plan.case;
+        if (decision === "approve") {
+          await tx.case.update({ where: { id: c.id }, data: { remindersPaused: true, status: "waiting_on_customer", diagnosisConfirmed: true } });
+        }
+        await tx.auditEvent.create({
+          data: {
+            businessId: c.businessId, caseId: c.id, customerId: c.customerId, invoiceId: c.invoiceId, at, actor: "Tony",
+            type: decision === "approve" ? "plan_approved" : "plan_rejected",
+            summary: decision === "approve" ? "Plan approved · routine reminders paused" : "Plan declined",
+            detail: plan.instalments.map((i) => `${formatAud(i.amountCents, { cents: false })} ${formatDay(i.dueDate)}`).join(" · "),
+            data: { planId: plan.id, recordedBy: currentUser.name },
+          },
+        });
+      },
+      { timeout: 20_000, maxWait: 10_000 }
+    );
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof UserError) return { ok: false, error: e.message, stale: e.stale };
+    console.error("decidePlan failed", e);
+    return { ok: false, error: "Could not record the decision. Nothing was changed." };
   }
 }

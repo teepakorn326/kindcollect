@@ -537,3 +537,32 @@ export const PENDING_BANK_LINES = [
     description: "EFT BELLAS CAFE INV1030",
   },
 ] as const;
+
+/**
+ * Inbound replies that "Simulate reply" (POST /api/demo/simulate-reply) inserts. Fixed timestamps keep the
+ * classify_case input — and so the AI cache key — identical across resets.
+ */
+export const PENDING_REPLIES = {
+  noodle: {
+    id: "msg-sim-noodle-1",
+    customerId: C.noodle,
+    caseId: K.noodle,
+    invoiceId: "inv-1026",
+    fromName: "Kevin Lau",
+    fromEmail: "kevin@goldennoodle.example",
+    subject: "Re: Friendly reminder — INV-1026",
+    occurredAt: "2026-10-13T09:12",
+    body: "Hi Tony, following up on my last email. Could we split INV-1026 into two payments — half next week and the rest early November? Things should pick up once the roadworks finish. Sorry again.",
+  },
+  bella: {
+    id: "msg-sim-bella-1",
+    customerId: C.bella,
+    caseId: K.bella,
+    invoiceId: "inv-1030",
+    fromName: "Bella Moretti",
+    fromEmail: "bella@bellascafe.example",
+    subject: "INV-1030",
+    occurredAt: "2026-10-13T08:47",
+    body: "Hi Tony, so sorry, this one completely slipped through with the new espresso machine drama. I'll pay it today. See you Thursday!",
+  },
+} as const;

@@ -129,6 +129,8 @@ const auditTones: Record<string, Tone> = {
   reminder_held: "success",
   credit_note_approved: "success",
   plan_approved: "success",
+  plan_rejected: "neutral",
+  draft_saved: "neutral",
   return_logged: "info",
   invoice_corrected: "info",
   reply_received: "info",

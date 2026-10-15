@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dateOnly, daysOverdue } from "@/lib/clock";
 import {
   creditNote,
+  draftAmountIssues,
   extractInvoiceNumber,
   isDigitTransposition,
   hasBlockers,
@@ -298,5 +299,19 @@ describe("daysOverdue (demo clock)", () => {
     expect(daysOverdue(dateOnly("2026-09-26"), TODAY)).toBe(17); // INV-1028 (crosses the DST change)
     expect(daysOverdue(dateOnly("2026-08-29"), TODAY)).toBe(45); // INV-1019
     expect(daysOverdue(dateOnly("2026-10-22"), TODAY)).toBe(-9); // INV-1033 not due
+  });
+});
+
+describe("draftAmountIssues", () => {
+  it("accepts amounts that match the facts, in either format", () => {
+    expect(draftAmountIssues("invoice INV-1030 (A$3,200) — total A$3,200.00", [320000])).toEqual([]);
+  });
+
+  it("flags an amount the AI made up", () => {
+    expect(draftAmountIssues("You owe A$3,250 plus a A$50 fee", [320000])).toEqual(["A$3,250", "A$50"]);
+  });
+
+  it("ignores text without amounts", () => {
+    expect(draftAmountIssues("See you Thursday", [320000])).toEqual([]);
   });
 });
