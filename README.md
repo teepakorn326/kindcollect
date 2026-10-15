@@ -6,11 +6,11 @@ diagnoses **why** an invoice is unpaid and fixes the cause. Hackathon build — 
 
 ## 5-minute setup
 
-1. **Tools:** Node 20+ and pnpm 9 (`npm i -g pnpm@9`).
+1. **Tools:** Node 22.18+ (runs `prisma/seed.ts` natively) and pnpm 9 (`npm i -g pnpm@9`).
 2. **Install:** `pnpm install`
 3. **Env:** `cp .env.example .env` and fill in `DATABASE_URL` / `DIRECT_URL` (Supabase, Sydney) and
    `ANTHROPIC_API_KEY`. Keep `DEMO_MODE=true`. Vapi and Resend keys are optional until those phases.
-4. **Database:** `pnpm db:push && pnpm db:seed` (available from Phase 2).
+4. **Database:** `pnpm db:push && pnpm db:seed` (prints row counts). Re-run `pnpm db:seed` or `POST /api/demo/reset` any time to reset the demo.
 5. **Run:** `pnpm dev` → http://localhost:3000/overview
 
 ## Scripts

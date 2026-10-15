@@ -1,0 +1,455 @@
+// KindCollect data model — CLAUDE.md §7. All money is integer cents (Int), currency "AUD".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- enums ----------
+
+enum UserRole {
+  owner
+  bookkeeper
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  void
+}
+
+enum PaymentStatus {
+  unallocated // sitting in suspense
+  allocated
+  ignored // zero-value / test transfer
+  outgoing // money out (shown on statement only)
+}
+
+enum CaseCause {
+  paid_not_matched
+  invoice_issue_ours
+  probably_forgot
+  cash_flow
+  habitual_late
+  blocked_on_customer_po
+  unknown
+}
+
+enum CaseStatus {
+  needs_approval
+  needs_review
+  waiting_on_customer
+  resolved
+}
+
+enum WhoActs {
+  sarah
+  sarah_to_customer
+  tony_approves
+  tony_decides
+}
+
+enum Confidence {
+  low
+  medium
+  high
+}
+
+enum EvidenceType {
+  email
+  returns
+  bank
+  document
+  call
+  history
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+enum MessageStatus {
+  draft
+  held // reminder held automatically by a rule
+  sent
+  received
+  cancelled
+}
+
+enum Tone {
+  warm
+  neutral
+  firm
+}
+
+enum PaymentPlanStatus {
+  proposed
+  approved
+  rejected
+}
+
+enum CallStatus {
+  draft
+  approved
+  in_progress
+  ended
+  failed
+}
+
+// ---------- models ----------
+
+model Business {
+  id                String   @id
+  name              String
+  abn               String
+  address           String
+  gstFree           Boolean  @default(true)
+  termsDays         Int      @default(14)
+  bankBsb           String
+  bankAccount       String
+  nextInvoiceNumber Int
+  createdAt         DateTime @default(now())
+
+  users        User[]
+  customers    Customer[]
+  invoices     Invoice[]
+  payments     Payment[]
+  cases        Case[]
+  auditEvents  AuditEvent[]
+}
+
+model User {
+  id         String   @id
+  businessId String
+  name       String
+  initials   String
+  email      String
+  role       UserRole
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id               String   @id
+  businessId       String
+  name             String
+  contactName      String
+  contactRole      String?
+  email            String
+  phone            String?
+  requiresPo       Boolean  @default(false)
+  termsDays        Int      @default(14)
+  creditLimitCents Int?
+  deliveryDays     String?
+  customerSince    DateTime
+  payLinkEnabled   Boolean  @default(false)
+  /// Names this customer appears under on bank statements (upper-case), used by matchPayment
+  bankPayerNames   String[]
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+  payments     Payment[]
+  returns      Return[]
+  cases        Case[]
+  messages     Message[]
+  paymentPlans PaymentPlan[]
+  calls        Call[]
+  auditEvents  AuditEvent[]
+
+  @@index([businessId])
+}
+
+model Invoice {
+  id                   String        @id
+  businessId           String
+  customerId           String
+  number               String
+  poNumber             String?
+  issueDate            DateTime
+  dueDate              DateTime
+  status               InvoiceStatus
+  currency             String        @default("AUD")
+  totalCents           Int
+  balanceCents         Int
+  paidAt               DateTime?
+  rejectedForMissingPo Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  lines       InvoiceLine[]
+  allocations Allocation[]
+  creditNotes CreditNote[]
+  returns     Return[]
+  cases       Case[]
+  messages    Message[]
+  paymentPlans PaymentPlan[]
+  calls       Call[]
+
+  @@unique([businessId, number])
+  @@index([customerId])
+}
+
+model InvoiceLine {
+  id             String @id @default(cuid())
+  invoiceId      String
+  sortOrder      Int
+  description    String
+  quantity       Int
+  unitPriceCents Int
+  amountCents    Int
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+/// A bank receipt (or any bank feed line) for the business.
+model Payment {
+  id          String        @id
+  businessId  String
+  customerId  String?
+  date        DateTime
+  amountCents Int
+  currency    String        @default("AUD")
+  payerName   String
+  reference   String
+  description String
+  status      PaymentStatus
+  syncedAt    DateTime
+  createdAt   DateTime      @default(now())
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  allocations Allocation[]
+  evidence    Evidence[]
+
+  @@index([businessId, date])
+}
+
+model Allocation {
+  id          String   @id @default(cuid())
+  paymentId   String
+  invoiceId   String
+  amountCents Int
+  confirmedBy String
+  confirmedAt DateTime
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([paymentId])
+}
+
+model CreditNote {
+  id          String   @id @default(cuid())
+  number      String   @unique
+  invoiceId   String
+  returnId    String?  @unique
+  amountCents Int
+  gstCents    Int      @default(0)
+  reason      String
+  approvedBy  String
+  approvedAt  DateTime
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  return  Return? @relation(fields: [returnId], references: [id])
+}
+
+model Return {
+  id             String   @id
+  number         String   @unique
+  customerId     String
+  invoiceId      String
+  date           DateTime
+  product        String
+  quantity       Int
+  unitPriceCents Int
+  reason         String
+  signedBy       String
+  driver         String
+  source         String
+
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoice    Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  creditNote CreditNote?
+  evidence   Evidence[]
+}
+
+model Case {
+  id                   String     @id
+  number               String     @unique
+  businessId           String
+  customerId           String
+  invoiceId            String
+  cause                CaseCause
+  status               CaseStatus
+  whoActs              WhoActs
+  summary              String
+  causeEvidenceLine    String
+  suggestedAction      String
+  suggestedActionDetail String
+  confidence           Confidence
+  /// null = not reviewed yet, true = confirmed by a person, false = rejected (re-opened for review)
+  diagnosisConfirmed   Boolean?
+  remindersPaused      Boolean    @default(false)
+  remindersPausedUntil DateTime?
+  commitmentDate       DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoice      Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  evidence     Evidence[]
+  messages     Message[]
+  paymentPlans PaymentPlan[]
+  calls        Call[]
+  auditEvents  AuditEvent[]
+
+  @@index([businessId])
+}
+
+model Evidence {
+  id         String       @id
+  caseId     String
+  type       EvidenceType
+  title      String
+  excerpt    String
+  /// Substring of excerpt rendered inside <mark>
+  highlight  String?
+  sourceRef  String
+  occurredAt DateTime
+  paymentId  String?
+  returnId   String?
+  messageId  String?
+
+  case    Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id])
+  return  Return?  @relation(fields: [returnId], references: [id])
+  message Message? @relation(fields: [messageId], references: [id])
+
+  @@index([caseId])
+}
+
+model Message {
+  id         String           @id
+  customerId String
+  caseId     String?
+  invoiceId  String?
+  direction  MessageDirection
+  status     MessageStatus
+  tone       Tone?
+  subject    String
+  body       String
+  fromName   String
+  fromEmail  String
+  toEmail    String
+  occurredAt DateTime
+  approvedBy String?
+  /// true when DEMO_MODE logged the message instead of sending it
+  demoOnly   Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  customer Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  case     Case?      @relation(fields: [caseId], references: [id])
+  invoice  Invoice?   @relation(fields: [invoiceId], references: [id])
+  evidence Evidence[]
+
+  @@index([customerId])
+}
+
+model PaymentPlan {
+  id         String            @id @default(cuid())
+  customerId String
+  caseId     String
+  invoiceId  String
+  status     PaymentPlanStatus
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime          @default(now())
+
+  customer    Customer                @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  case        Case                    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  invoice     Invoice                 @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  instalments PaymentPlanInstalment[]
+}
+
+model PaymentPlanInstalment {
+  id          String   @id @default(cuid())
+  planId      String
+  sequence    Int
+  dueDate     DateTime
+  amountCents Int
+
+  plan PaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+model Call {
+  id                 String     @id
+  customerId         String
+  caseId             String
+  invoiceId          String
+  status             CallStatus
+  phoneNumber        String
+  approvedBy         String?
+  approvedAt         DateTime?
+  vapiCallId         String?    @unique
+  startedAt          DateTime?
+  endedAt            DateTime?
+  /// [{ speaker: "agent" | "customer", text, at }]
+  transcript         Json?
+  recordingUrl       String?
+  /// extract_call_outcome tool output
+  outcome            Json?
+  outcomeConfirmedBy String?
+  outcomeConfirmedAt DateTime?
+  createdAt          DateTime   @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  case     Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  businessId String
+  caseId     String?
+  customerId String?
+  invoiceId  String?
+  at         DateTime
+  /// "Sarah", "Tony", "Rule", "AI", "Driver app", "Bank feed", "Customer"
+  actor      String
+  type       String
+  summary    String
+  detail     String?
+  data       Json?
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  case     Case?     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, at])
+  @@index([caseId, at])
+}
+
+model AiResult {
+  id        String   @id @default(cuid())
+  tool      String
+  inputHash String   @unique
+  input     Json
+  output    Json
+  model     String
+  latencyMs Int?
+  createdAt DateTime @default(now())
+}

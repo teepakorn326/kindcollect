@@ -197,3 +197,13 @@ docs/{HANDOFF.md,mockups/}
 - 2026-10-16 · Basic Auth middleware is skipped when `BASIC_AUTH_USER`/`PASS` are unset (local dev); `/api/vapi/webhook` and `/demo/*` assets bypass it.
 - 2026-10-16 · Business selector lists the mockup's 3 businesses; only Fresh Harvest Produce is selectable (others disabled, no data).
 - 2026-10-16 · `pnpm test` runs Vitest with `passWithNoTests` until Phase 3 adds tests; Playwright reads `BASE_URL` and Basic Auth creds from env.
+- 2026-10-16 · Prisma pinned to 6.19 (7.x changes the client/config model). `prisma db push`, no migrations. Build runs `prisma generate`.
+- 2026-10-16 · Demo clock (`lib/clock.ts`): in DEMO_MODE "today" is pinned to Mon 13 Oct 2026 (Sydney) with the real time of day, so overdue days match the script. Date-only fields are stored at Sydney noon.
+- 2026-10-16 · Seed lives in `src/lib/demo/seed.ts` (shared by `pnpm db:seed` and `POST /api/demo/reset`). It truncates `Business` CASCADE; `AiResult` is never truncated (it is the AI fallback cache). `db:seed` uses Node's native TS type stripping (Node ≥ 22.18) — no tsx.
+- 2026-10-16 · Stable seed ids (`DEMO_IDS`: `kc-0043`, `pay-city-1210`, `msg-bella-nudge`, `call-harbourside-1019`, …) so pre-opened tabs survive a reset.
+- 2026-10-16 · Schema additions beyond §7: `User` (Tony, Sarah), `PaymentPlanInstalment` (money stays in Int columns, not JSON), `Payment.status` (unallocated/allocated/ignored/outgoing), `Case.status`/`whoActs`/`confidence`, `Invoice.balanceCents` kept in sync inside each write transaction.
+- 2026-10-16 · `Case.diagnosisConfirmed` is nullable: null = not reviewed, true = confirmed, false = rejected/re-opened.
+- 2026-10-16 · INV-1028 keeps the mockup dates (issued 12 Sep, due 26 Sep), which computes to **17** days overdue on 13 Oct; the mockups' "18 days" is inconsistent with their own due date.
+- 2026-10-16 · Invoice lines invented so each total is exact (catalogue: greens 47.00, tomatoes 52.00, strawberries 45.00 — the CreateInvoice prices). Harbourside history: days late 38/41/43/44/46/48/52/55 → median 45; INV-0978 and INV-1004 rejected for missing PO.
+- 2026-10-16 · Golden Noodle reminders are not paused at seed; Phase 6 plan approval pauses them. `PENDING_BANK_LINES` (Bella pays A$3,200) is the next line "Sync bank feed" inserts.
+- 2026-10-16 · Supabase project is in ap-southeast-1 (Singapore), not Sydney. `DATABASE_URL` = transaction pooler :6543 `?pgbouncer=true`, `DIRECT_URL` = session pooler :5432 (the `db.<ref>.supabase.co` host is IPv6-only). Full reset takes ~18 s.
