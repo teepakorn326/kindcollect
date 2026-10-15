@@ -421,3 +421,29 @@ export function draftAmountIssues(text: string, allowedCents: readonly number[])
     .filter((a) => !allowedCents.includes(a.cents))
     .map((a) => a.raw);
 }
+
+// ======================= callGuard =======================
+
+export type CallGuardResult = { allowed: true } | { allowed: false; reason: "not_approved" | "outside_hours" | "weekend" | "too_soon"; detail: string };
+
+const SYD_PARTS = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Sydney", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+
+/**
+ * Enforced in code, not in the voice prompt (ACCC/ASIC guideline): Tony approved this call,
+ * business days 7:30–21:00 Australia/Sydney, and at most one call per customer per 7 days.
+ */
+export function callGuard(input: { at: Date; approved: boolean; previousCallStarts: readonly Date[] }): CallGuardResult {
+  if (!input.approved) return { allowed: false, reason: "not_approved", detail: "Tony has not approved this call." };
+  const parts = SYD_PARTS.formatToParts(input.at);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  const day = get("weekday");
+  if (day === "Sat" || day === "Sun") return { allowed: false, reason: "weekend", detail: "Calls are only made Monday to Friday." };
+  const minutes = (Number(get("hour")) % 24) * 60 + Number(get("minute"));
+  if (minutes < 7 * 60 + 30 || minutes >= 21 * 60) {
+    return { allowed: false, reason: "outside_hours", detail: "Calls are only made between 7:30 AM and 9:00 PM Sydney time." };
+  }
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const recent = input.previousCallStarts.find((s) => input.at.getTime() - s.getTime() < weekMs && s.getTime() <= input.at.getTime());
+  if (recent) return { allowed: false, reason: "too_soon", detail: "This customer was already called in the last 7 days." };
+  return { allowed: true };
+}

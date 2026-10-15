@@ -125,6 +125,7 @@ model Business {
   payments     Payment[]
   cases        Case[]
   auditEvents  AuditEvent[]
+  tasks        Task[]
 }
 
 model User {
@@ -164,6 +165,7 @@ model Customer {
   paymentPlans PaymentPlan[]
   calls        Call[]
   auditEvents  AuditEvent[]
+  tasks        Task[]
 
   @@index([businessId])
 }
@@ -318,6 +320,7 @@ model Case {
   paymentPlans PaymentPlan[]
   calls        Call[]
   auditEvents  AuditEvent[]
+  tasks        Task[]
 
   @@index([businessId])
 }
@@ -417,11 +420,39 @@ model Call {
   outcome            Json?
   outcomeConfirmedBy String?
   outcomeConfirmedAt DateTime?
+  /// "live" (Vapi) or "rehearsal" (demo fallback recording)
+  source             String?
   createdAt          DateTime   @default(now())
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   case     Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
   invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+enum TaskStatus {
+  open
+  done
+}
+
+/// A decision or follow-up for a person (e.g. "Send to Tony for decision"). Never changes terms by itself.
+model Task {
+  id         String     @id @default(cuid())
+  businessId String
+  customerId String?
+  caseId     String?
+  assignee   String
+  title      String
+  detail     String?
+  status     TaskStatus @default(open)
+  createdBy  String
+  createdAt  DateTime   @default(now())
+  data       Json?
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  case     Case?     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, status])
 }
 
 model AuditEvent {

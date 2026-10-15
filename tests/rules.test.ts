@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dateOnly, daysOverdue } from "@/lib/clock";
 import {
+  callGuard,
   creditNote,
   draftAmountIssues,
   extractInvoiceNumber,
@@ -313,5 +314,28 @@ describe("draftAmountIssues", () => {
 
   it("ignores text without amounts", () => {
     expect(draftAmountIssues("See you Thursday", [320000])).toEqual([]);
+  });
+});
+
+describe("callGuard", () => {
+  const syd = (iso: string) => new Date(`${iso}+11:00`);
+  const ok = { approved: true, previousCallStarts: [] as Date[] };
+
+  it("allows an approved call on a weekday within 7:30–21:00 Sydney", () => {
+    expect(callGuard({ ...ok, at: syd("2026-10-13T09:45:00") })).toEqual({ allowed: true });
+    expect(callGuard({ ...ok, at: syd("2026-10-13T07:30:00") })).toEqual({ allowed: true });
+  });
+
+  it("blocks outside hours, at weekends and without Tony's approval", () => {
+    expect(callGuard({ ...ok, at: syd("2026-10-13T07:29:00") })).toMatchObject({ allowed: false, reason: "outside_hours" });
+    expect(callGuard({ ...ok, at: syd("2026-10-13T21:00:00") })).toMatchObject({ allowed: false, reason: "outside_hours" });
+    expect(callGuard({ ...ok, at: syd("2026-10-17T10:00:00") })).toMatchObject({ allowed: false, reason: "weekend" });
+    expect(callGuard({ ...ok, approved: false, at: syd("2026-10-13T10:00:00") })).toMatchObject({ allowed: false, reason: "not_approved" });
+  });
+
+  it("allows at most one call per customer per 7 days", () => {
+    const at = syd("2026-10-13T10:00:00");
+    expect(callGuard({ ...ok, at, previousCallStarts: [syd("2026-10-08T10:00:00")] })).toMatchObject({ allowed: false, reason: "too_soon" });
+    expect(callGuard({ ...ok, at, previousCallStarts: [syd("2026-10-06T09:59:00")] })).toEqual({ allowed: true });
   });
 });

@@ -9,6 +9,7 @@ import { causeStatus } from "../status";
 import { runTool, type AiOutcome } from "./client";
 import type { ClassifyOutput } from "./tools";
 
+const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 const whoActsFor: Record<CaseCause, WhoActs> = {
   paid_not_matched: "sarah",
   invoice_issue_ours: "sarah",
@@ -49,13 +50,14 @@ export async function buildClassifyInput(caseId: string) {
       evidence: { orderBy: [{ occurredAt: "asc" }, { id: "asc" }] },
     },
   });
-  const [messages, receipts, history] = await Promise.all([
+  const [messages, receipts, history, calls] = await Promise.all([
     db.message.findMany({
       where: { customerId: c.customerId, status: { in: ["sent", "received"] } },
       orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
     }),
     db.payment.findMany({ where: { customerId: c.customerId, status: "unallocated", amountCents: { gt: 0 } }, orderBy: { date: "asc" } }),
     paymentHistory(c.customerId),
+    db.call.findMany({ where: { caseId: c.id, status: "ended" }, orderBy: { endedAt: "asc" } }),
   ]);
   const inv = c.invoice;
   const input = {
@@ -84,6 +86,14 @@ export async function buildClassifyInput(caseId: string) {
     })),
     documents: [
       ...c.evidence.filter((e) => e.type === "document" || e.type === "returns").map((e) => ({ id: e.id, type: e.type, title: e.title, text: e.excerpt })),
+      ...calls.map((call) => ({
+        id: call.id,
+        type: "call",
+        title: `Phone call to ${c.customer.name} accounts payable`,
+        text: (Array.isArray(call.transcript) ? (call.transcript as { speaker: string; text: string }[]) : [])
+          .map((t) => `${t.speaker === "agent" ? "Assistant" : "Customer"}: ${t.text}`)
+          .join("\n"),
+      })),
       ...inv.returns.map((r) => ({
         id: r.id,
         type: "returns",
@@ -183,7 +193,7 @@ export async function applyClassification(cls: Classification, actorNote?: strin
           at,
           actor: "AI",
           type: "case_classified",
-          summary: `Classified: ${causeStatus[output.cause].label.toLowerCase()}`,
+          summary: `Classified: ${lowerFirst(causeStatus[output.cause].label)}`,
           detail: `${output.confidence} confidence${cls.cached ? " · cached" : ""}${actorNote ? ` · ${actorNote}` : ""}`,
           data: { output, model: cls.model, cached: cls.cached, reason: cls.reason ?? null },
         },
