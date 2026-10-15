@@ -1,0 +1,199 @@
+# KindCollect — CLAUDE.md
+
+> Hackathon build (Inter-Uni Sym AI Hackathon, 17–18 Oct 2026). Read `docs/HANDOFF.md` first for the
+> product story, the 5 demo cases and all decisions. Mockups of every screen are in `docs/mockups/`.
+
+**One line:** An AI receivables workflow for small suppliers that diagnoses *why* an invoice is unpaid and
+fixes the cause — instead of sending the same reminder to everyone.
+**Tagline:** *Get paid, without the awkward conversation.*
+**Alternative to:** the invoicing + receivables side of Xero.
+
+---
+
+## 0. Non-negotiable product rules
+
+- **AI suggests. Rules validate. People approve.** No allocation, credit note, status change, email or
+  phone call happens without a human clicking Confirm/Approve.
+- **Mock input, real logic, real state.** Bank feed, inbound email and documents are seeded. Rules,
+  money math, AI classification, DB writes and the audit trail are real.
+- Every AI suggestion renders its **source evidence** beside it (excerpt + link). Never "AI verified".
+  Use: `Suggested`, `Possible match — confirmation required`, `Needs review`.
+- **Money is integer cents** in `lib/money.ts`. The LLM never produces a number that is written to the DB.
+- Status = **label + colour**, never colour alone.
+- Every outbound action is blocked when the customer has an unmatched payment or an open dispute
+  (`SendGuard`). Status is re-checked at send time.
+- `DEMO_MODE=true`: emails are logged as "would send", pay links go to `/pay/[token]` in-app, bank sync
+  inserts seed rows. Show the "Demo mode" badge; never toast "Email sent" when nothing was sent.
+- Every AI call has a **cached fallback** (`AiResult` table, keyed by input hash). Timeout 8 s → use cache,
+  show a small "cached" badge.
+- Customer screens show **descriptive** payment history only (on-time count, median days late). No
+  scores, no "bad customer" badges.
+
+---
+
+## 1. Stack (do not add to it)
+
+| Layer | Choice |
+|---|---|
+| App | Next.js 15 App Router, TypeScript strict, pnpm |
+| UI | Tailwind v4 + CSS variable tokens (§2), shadcn/ui (Radix), lucide-react, Inter via `next/font` |
+| Forms | react-hook-form + zod (schemas shared with server actions) |
+| Server state | TanStack Query v5 (stale banner from `dataUpdatedAt`) |
+| DB | Supabase Postgres (Sydney) + Prisma, `prisma db push`, seed in `prisma/seed.ts` |
+| AI | `@anthropic-ai/sdk`, Claude Sonnet, **tool use only** (`classify_case`, `draft_message`, `extract_call_outcome`) |
+| Voice | Vapi (AU number) → webhook `/api/vapi/webhook` → `extract_call_outcome` |
+| Email | Resend behind `DEMO_MODE` flag (default: log only) |
+| Tests | Vitest for `lib/money.ts` + `lib/rules.ts`; one Playwright spec = the 90-second demo |
+| Deploy | Vercel (`syd1`), auto-deploy from `main`; Sunday noon switch production branch to `release` |
+| Auth | Hard-coded user Sarah + Basic Auth middleware |
+
+Not in scope: Python services, Docker, Redis/queues, vector DB, tRPC/GraphQL, Storybook, real bank/Xero
+integrations, real Stripe.
+
+---
+
+## 2. Design tokens — `src/styles/tokens.css`
+
+```css
+:root {
+  --kc-color-primary:       #0F766E; /* teal — primary action */
+  --kc-color-primary-hover: #115E59;
+  --kc-color-primary-soft:  #CCFBF1; /* active nav, avatar */
+  --kc-color-primary-tint:  #F0FDFA; /* suggestion panels */
+  --kc-color-primary-line:  #99F6E4;
+  --kc-color-bg:            #F8FAFC;
+  --kc-color-surface:       #FFFFFF;
+  --kc-color-border:        #E2E8F0;
+  --kc-color-text:          #0F172A;
+  --kc-color-text-muted:    #64748B;
+
+  --kc-status-success:    #15803D; --kc-status-success-bg: #DCFCE7; /* paid, matched, probably forgot */
+  --kc-status-review:     #B45309; --kc-status-review-bg:  #FEF3C7; /* needs review, cash-flow trouble */
+  --kc-status-error:      #B91C1C; --kc-status-error-bg:   #FEE2E2; /* disputed, blocked, habitual late */
+  --kc-status-info:       #1D4ED8; --kc-status-info-bg:    #DBEAFE; /* unpaid, invoice issue (ours) */
+
+  --kc-font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --kc-radius-card: 12px; --kc-radius-input: 8px; --kc-radius-badge: 999px;
+  --kc-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+```
+
+Tailwind aliases: `bg-kc-primary`, `bg-kc-surface`, `text-kc-muted`, `border-kc-border`,
+`bg-kc-status-review-bg`, etc. Money text always `tabular-nums`. Never hard-code hex in components.
+
+Layout shell: TopBar 56 px (logo · Business selector · search · Demo badge · avatar) · Sidebar 240 px
+(Overview, Action Queue, Invoices, Payments, Customers, Settings) · Main `max-w-[1280px] px-8 py-6`.
+Two-column pages use `grid gap-5 lg:grid-cols-2` (Case Detail, Payment Matching) or
+`lg:grid-cols-[2fr_3fr]` (Email Approval) / `[3fr_2fr]` (Create Invoice).
+
+---
+
+## 3. Domain components — `src/components/domain/`
+
+| Component | Props | Notes |
+|---|---|---|
+| `StatusBadge` | `kind: "payment" \| "cause" \| "followup"`, `value` | labels from `lib/status.ts` only |
+| `MoneyValue` | `cents: number`, `currency?: "AUD"` | `Intl.NumberFormat("en-AU")`, tabular nums |
+| `SuggestionPanel` | `title`, `body`, `confidence`, `evidenceIds[]`, children (actions) | teal tint panel, "Suggested" chip |
+| `EvidenceCard` | `evidence: Evidence` (email / returns / bank / document / call) | left colour bar by type, excerpt with `<mark>` |
+| `AllocationRow` | `invoice`, `proposedCents`, `onChange` | validates ≤ outstanding and ≤ unallocated |
+| `SendGuard` | `reason?: "unmatched_payment" \| "dispute"`, `href` | replaces Approve button with "Sending paused" |
+| `AuditTimeline` | `events: AuditEvent[]` | dot colour by type, newest last |
+| `DemoBadge` | — | amber pill, every page |
+| `CallTranscript` | `turns[]`, `live?` | agent turns teal, customer grey |
+
+Figma / mockup frame names match these and the page names below.
+
+---
+
+## 4. Pages (route → mockup)
+
+| Route | Mockup | Demo case |
+|---|---|---|
+| `/overview` | `docs/mockups/Overview.html` | Sarah's Monday: A$16,000 owed, only A$9,900 needs chasing |
+| `/queue` | `ActionQueue.html` | 5 rows, ordered by rule |
+| `/queue/[caseId]` | `Main.html` (Case Detail) | Sweet Bakery — credit note A$360 |
+| `/payments/[paymentId]/review` | `PaymentMatchingReview.html` | City Catering — A$3,000 ref "INV-1013" → INV-1031 |
+| `/communications/[draftId]` | `EmailApproval.html` | Bella's Café — warm nudge + pay link |
+| `/invoices/new` | `CreateInvoice.html` | Harbourside — PO + 3-way check |
+| `/customers/[id]` | `CustomerAccount.html` | Harbourside — change of terms |
+| `/calls/[callId]` | `VoiceCall.html` | Harbourside — AI call to AP |
+
+---
+
+## 5. Rules — `lib/rules.ts` (pure, unit-tested)
+
+```
+queueOrder(cases):   paid-not-matched → invoice-issue-ours → commitment due → probably-forgot → cash-flow → habitual
+matchPayment(p, invoices): payer matches customer AND amount == exactly one open invoice → "possible match"
+                           (reference ignored when it names a paid/unknown invoice; never auto-allocate)
+sendGuard(customer): blocked if customer has an unallocated receipt or an open dispute
+pauseReminders(case): on customer reply classified as dispute / document request / cash-flow
+creditNote(returns): qty × unit price, GST-free for fresh produce (business flag `gstFree`)
+threeWayCheck(invoice, po?, deliveryNote): PO qty/price vs invoice, delivery qty vs invoice; missing PO = blocker for customers with `requiresPo`
+```
+
+`lib/money.ts`: `addCents`, `allocate(paymentCents, allocations[])` (throws on over-allocation or
+currency mismatch), `formatAud(cents)`.
+
+---
+
+## 6. AI — `lib/ai/`
+
+All calls use **tool use** with a JSON schema; every result includes `confidence` and `evidence_ids`.
+
+- `classify_case({ invoice, messages[], documents[], bankLines[], history })` →
+  `{ cause: "paid_not_matched"|"invoice_issue_ours"|"probably_forgot"|"cash_flow"|"habitual_late"|"blocked_on_customer_po"|"unknown", summary, suggested_action, confidence, evidence_ids[] }`
+- `draft_message({ customer, invoice, cause, tone: "warm"|"neutral"|"firm", facts[] })` → `{ subject, body, facts_used[] }`
+- `extract_call_outcome({ transcript })` → `{ invoice_received, blocker, commitment_date, dispute_raised, confidence, quotes[] }`
+
+Prompts live in `lib/ai/prompts/*.md`. Voice agent system prompt: `lib/ai/prompts/voice-agent.md`
+(introduces itself as an assistant for Tony, asks only: received? blocker? when?; no negotiation; ends
+the call on request or on a dispute; business hours and 1 call/customer/week enforced in code, not prompt).
+
+---
+
+## 7. Data model — `prisma/schema.prisma`
+
+`Business` (gstFree) · `Customer` (requiresPo, terms) · `Invoice` · `InvoiceLine` · `Payment` (bank
+receipt) · `Allocation` · `CreditNote` · `Return` · `Case` (cause, diagnosisConfirmed, remindersPaused) ·
+`Evidence` (type, excerpt, sourceRef) · `Message` (inbound/outbound, tone, demoOnly) · `PaymentPlan` ·
+`Call` (transcript, outcome) · `AuditEvent` · `AiResult` (inputHash, output)
+
+Keep `Case.diagnosisConfirmed` — confirmed diagnoses are the dataset that compounds (see HANDOFF §Why us).
+
+---
+
+## 8. Project structure
+
+```
+app/(shell)/{overview,queue,queue/[caseId],payments/[id]/review,communications/[id],invoices/new,customers/[id],calls/[id]}
+app/api/{ai/classify,ai/draft,vapi/webhook,demo/reset,demo/sync-bank}
+components/ui/   components/domain/
+lib/{money.ts,rules.ts,status.ts,db.ts}  lib/ai/{client.ts,tools.ts,prompts/}
+prisma/{schema.prisma,seed.ts}
+tests/{money.test.ts,rules.test.ts}  e2e/demo.spec.ts
+docs/{HANDOFF.md,mockups/}
+```
+
+## 9. Build order
+
+1. Scaffold + tokens + shell + seed (Fri night)
+2. `lib/money.ts`, `lib/rules.ts` + tests
+3. Action Queue → Case Detail (Sweet Bakery) → Payment Matching (City Catering)
+4. AI classify + draft → Email Approval (Bella's)
+5. Overview
+6. Voice Call (Vapi) — only after 1–5 are on the deployed URL
+7. Create Invoice, Customer Account
+8. Sun 12:00 feature freeze → rehearse ×3 on prod URL → pin release
+
+## 10. Decisions log (keep 1–2 lines each)
+
+- 2026-10-16 · Code lives under `src/` (`src/app`, `src/lib`, `src/components`, `src/styles`); §8 paths are relative to `src/`. `prisma/`, `tests/`, `e2e/` stay at repo root.
+- 2026-10-16 · Next pinned to 15.5.x (create-next-app@15); shadcn CLI 4.21 with the `radix-nova` style (Radix base, per §1).
+- 2026-10-16 · shadcn's radix registry no longer ships `toast` (only sonner). Toast is hand-written from the legacy shadcn source on `radix-ui` Toast (`components/ui/toast.tsx`, `toaster.tsx`, `hooks/use-toast.ts`) — no new dependency.
+- 2026-10-16 · shadcn semantic vars (`--primary`, `--border`, …) are mapped onto kc tokens in `globals.css`; components use `kc-*` classes. Light theme only.
+- 2026-10-16 · DemoBadge copy is "Demo data" (matches every mockup). Outbound-email screens additionally say "Demo mode — message will not be sent".
+- 2026-10-16 · Basic Auth middleware is skipped when `BASIC_AUTH_USER`/`PASS` are unset (local dev); `/api/vapi/webhook` and `/demo/*` assets bypass it.
+- 2026-10-16 · Business selector lists the mockup's 3 businesses; only Fresh Harvest Produce is selectable (others disabled, no data).
+- 2026-10-16 · `pnpm test` runs Vitest with `passWithNoTests` until Phase 3 adds tests; Playwright reads `BASE_URL` and Basic Auth creds from env.

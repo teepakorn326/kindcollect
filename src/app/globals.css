@@ -1,0 +1,99 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "../styles/tokens.css";
+
+/* kc-* Tailwind aliases (CLAUDE.md §2): bg-kc-primary, text-kc-muted, bg-kc-status-review-bg, … */
+@theme inline {
+  --color-kc-primary: var(--kc-color-primary);
+  --color-kc-primary-hover: var(--kc-color-primary-hover);
+  --color-kc-primary-soft: var(--kc-color-primary-soft);
+  --color-kc-primary-tint: var(--kc-color-primary-tint);
+  --color-kc-primary-line: var(--kc-color-primary-line);
+  --color-kc-bg: var(--kc-color-bg);
+  --color-kc-surface: var(--kc-color-surface);
+  --color-kc-border: var(--kc-color-border);
+  --color-kc-text: var(--kc-color-text);
+  --color-kc-muted: var(--kc-color-text-muted);
+
+  --color-kc-status-success: var(--kc-status-success);
+  --color-kc-status-success-bg: var(--kc-status-success-bg);
+  --color-kc-status-review: var(--kc-status-review);
+  --color-kc-status-review-bg: var(--kc-status-review-bg);
+  --color-kc-status-error: var(--kc-status-error);
+  --color-kc-status-error-bg: var(--kc-status-error-bg);
+  --color-kc-status-info: var(--kc-status-info);
+  --color-kc-status-info-bg: var(--kc-status-info-bg);
+
+  --radius-kc-card: var(--kc-radius-card);
+  --radius-kc-input: var(--kc-radius-input);
+  --radius-kc-badge: var(--kc-radius-badge);
+  --shadow-kc-card: var(--kc-shadow-card);
+
+  /* next/font hashes the family name, so --font-inter comes first */
+  --font-sans: var(--font-inter), var(--kc-font-sans);
+  --font-heading: var(--font-inter), var(--kc-font-sans);
+}
+
+/* shadcn semantic variables mapped onto kc tokens */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  --background: var(--kc-color-bg);
+  --foreground: var(--kc-color-text);
+  --card: var(--kc-color-surface);
+  --card-foreground: var(--kc-color-text);
+  --popover: var(--kc-color-surface);
+  --popover-foreground: var(--kc-color-text);
+  --primary: var(--kc-color-primary);
+  --primary-foreground: var(--kc-color-surface);
+  --secondary: var(--kc-color-bg);
+  --secondary-foreground: var(--kc-color-text);
+  --muted: var(--kc-color-bg);
+  --muted-foreground: var(--kc-color-text-muted);
+  --accent: var(--kc-color-primary-tint);
+  --accent-foreground: var(--kc-color-primary);
+  --destructive: var(--kc-status-error);
+  --border: var(--kc-color-border);
+  --input: var(--kc-color-border);
+  --ring: var(--kc-color-primary);
+  --radius: var(--kc-radius-input);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-kc-bg text-kc-text;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  html {
+    @apply font-sans;
+  }
+}

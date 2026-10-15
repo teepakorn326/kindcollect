@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Action Queue</title>
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0F766E;text-decoration:none}a:hover{color:#115E59}
+</style>
+
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: #F8FAFC; color: #0F172A; font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.5;">
+
+  <header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #E2E8F0;">
+    <div style="display: flex; align-items: center; gap: 10px; width: 216px;">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: #0F766E; display: flex; align-items: center; justify-content: center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-3.3-6.5"></path><path d="M9 12l2.5 2.5L20 6"></path></svg>
+      </div>
+      <span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em;">KindCollect</span>
+    </div>
+    <label style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 1px solid #E2E8F0; border-radius: 8px; background: #F8FAFC; font-size: 13px; color: #64748B;">Business
+      <select style="border: 0; background: transparent; font: inherit; color: #0F172A; font-weight: 600;"><option>Fresh Harvest Produce</option><option>Parramatta Plumbing</option><option>Lane Cove Dental</option></select>
+    </label>
+    <label style="flex: 1 1 240px; max-width: 420px; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 1px solid #E2E8F0; border-radius: 8px; background: #F8FAFC; color: #64748B;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input type="search" placeholder="Search invoices, customers, references…" style="flex: 1; border: 0; background: transparent; font: inherit; color: #0F172A; outline: none;">
+    </label>
+    <div style="flex: 1;"></div>
+    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #FEF3C7; color: #B45309; font-size: 12px; font-weight: 600;">Demo data</span>
+    <button type="button" aria-label="Account menu — Sarah" style="width: 32px; height: 32px; border-radius: 999px; border: 1px solid #E2E8F0; background: #CCFBF1; color: #0F766E; font-weight: 600; font-size: 12px; cursor: pointer;">SA</button>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap;">
+    <nav aria-label="Primary" style="flex: 0 0 240px; box-sizing: border-box; padding: 16px 12px; background: #FFFFFF; border-right: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 2px;">
+      <a href="Overview.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #0F172A; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"></rect><rect x="13" y="3" width="8" height="8" rx="1.5"></rect><rect x="3" y="13" width="8" height="8" rx="1.5"></rect><rect x="13" y="13" width="8" height="8" rx="1.5"></rect></svg>Overview</a>
+      <a href="ActionQueue.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; background: #CCFBF1; color: #0F766E; font-weight: 600;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h10"></path><path d="M4 18h7"></path><path d="M16 15l3 3 4-5"></path></svg>Action Queue<span style="margin-left: auto; padding: 1px 8px; border-radius: 999px; background: #0F766E; color: #FFFFFF; font-size: 11px; font-weight: 600;">5</span></a>
+      <a href="CreateInvoice.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #0F172A; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"></path><path d="M14 2v6h6"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>Invoices</a>
+      <a href="PaymentMatchingReview.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #0F172A; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle></svg>Payments</a>
+      <a href="CustomerAccount.html" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #0F172A; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"></circle><path d="M2 21a7 7 0 0 1 14 0"></path><path d="M16 4a4 4 0 0 1 0 8"></path><path d="M22 21a7 7 0 0 0-5-6.7"></path></svg>Customers</a>
+      <div style="flex: 1;"></div>
+      <a href="#settings" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #0F172A; font-weight: 500;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M4.9 19.1L7 17"></path><path d="M17 7l2.1-2.1"></path></svg>Settings</a>
+    </nav>
+
+    <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 40px; display: flex; flex-direction: column; gap: 20px;">
+
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+        <div>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em;">Action Queue</h1>
+          <p style="margin: 4px 0 0; color: #64748B; font-size: 13px;">5 overdue invoices · Ordered by rule: match money first, fix our mistakes second, then chase — never the other way round</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; color: #0F172A; font: inherit; font-weight: 500; cursor: pointer;">Weekly summary for Tony</button>
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; color: #0F172A; font: inherit; font-weight: 500; cursor: pointer;">Re-diagnose all</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+        <label style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #64748B;">Cause
+          <select style="border: 0; background: transparent; font: inherit; color: #0F172A; font-weight: 500;"><option>All</option><option>Paid · not matched</option><option>Invoice issue — ours</option><option>Probably forgot</option><option>Cash-flow trouble</option><option>Habitual late payer</option></select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #64748B;">Who acts
+          <select style="border: 0; background: transparent; font: inherit; color: #0F172A; font-weight: 500;"><option>Anyone</option><option>Sarah</option><option>Tony</option><option>Customer</option></select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #64748B;">Status
+          <select style="border: 0; background: transparent; font: inherit; color: #0F172A; font-weight: 500;"><option>Needs approval</option><option>Waiting on customer</option><option>Resolved</option></select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #64748B;">Overdue
+          <select style="border: 0; background: transparent; font: inherit; color: #0F172A; font-weight: 500;"><option>Any</option><option>Under 14 days</option><option>14–30 days</option><option>Over 30 days</option></select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 1px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #64748B;">Customer
+          <select style="border: 0; background: transparent; font: inherit; color: #0F172A; font-weight: 500;"><option>All</option><option>Bella's Café</option><option>City Catering Co.</option><option>Golden Noodle House</option><option>Harbourside Hotel</option><option>Sweet Bakery</option></select>
+        </label>
+        <button type="button" style="height: 36px; padding: 0 10px; border: 0; background: transparent; color: #64748B; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;">Clear</button>
+      </div>
+
+      <section style="box-sizing: border-box; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,0.06); overflow: hidden;">
+        <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 920px;">
+          <thead>
+            <tr style="text-align: left; font-size: 12px; color: #64748B; background: #F8FAFC;">
+              <th style="padding: 10px 20px; font-weight: 500; width: 36px;"><input type="checkbox" aria-label="Select all cases"></th>
+              <th style="padding: 10px 12px; font-weight: 500;">Customer</th>
+              <th style="padding: 10px 12px; font-weight: 500;">Invoice</th>
+              <th style="padding: 10px 12px; font-weight: 500; text-align: right;">Balance</th>
+              <th style="padding: 10px 12px; font-weight: 500;">Overdue</th>
+              <th style="padding: 10px 12px; font-weight: 500;">Likely cause · evidence</th>
+              <th style="padding: 10px 12px; font-weight: 500;">Who acts</th>
+              <th style="padding: 10px 20px; font-weight: 500;">Suggested action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top: 1px solid #E2E8F0;">
+              <td style="padding: 14px 20px;"><input type="checkbox" aria-label="Select INV-1031"></td>
+              <td style="padding: 14px 12px; font-weight: 500;">City Catering Co.</td>
+              <td style="padding: 14px 12px; color: #64748B;">INV-1031</td>
+              <td style="padding: 14px 12px; text-align: right; font-variant-numeric: tabular-nums;">A$3,000.00</td>
+              <td style="padding: 14px 12px;">9 days</td>
+              <td style="padding: 14px 12px;"><span style="display: inline-flex; padding: 3px 10px; border-radius: 999px; background: #DCFCE7; color: #15803D; font-size: 12px; font-weight: 600;">Paid · not matched</span><div style="font-size: 12px; color: #64748B; margin-top: 4px;">Bank: A$3,000 received 12 Oct, ref “INV-1013” — no such open invoice</div></td>
+              <td style="padding: 14px 12px;">Sarah</td>
+              <td style="padding: 14px 20px;"><a href="PaymentMatchingReview.html" style="font-weight: 600;">Match payment</a><div style="font-size: 12px; color: #64748B;">Reminder due today was held automatically</div></td>
+            </tr>
+            <tr style="border-top: 1px solid #E2E8F0;">
+              <td style="padding: 14px 20px;"><input type="checkbox" aria-label="Select INV-1028"></td>
+              <td style="padding: 14px 12px; font-weight: 500;">Sweet Bakery</td>
+              <td style="padding: 14px 12px; color: #64748B;">INV-1028</td>
+              <td style="padding: 14px 12px; text-align: right; font-variant-numeric: tabular-nums;">A$3,100.00</td>
+              <td style="padding: 14px 12px;">18 days</td>
+              <td style="padding: 14px 12px;"><span style="display: inline-flex; padding: 3px 10px; border-radius: 999px; background: #DBEAFE; color: #1D4ED8; font-size: 12px; font-weight: 600;">Invoice issue — ours</span><div style="font-size: 12px; color: #64748B; margin-top: 4px;">Reply 8 Oct + returns log: 8 boxes returned, no credit note</div></td>
+              <td style="padding: 14px 12px;">Sarah</td>
+              <td style="padding: 14px 20px;"><a href="Main.html" style="font-weight: 600;">Approve A$360 credit note</a><div style="font-size: 12px; color: #64748B;">Then send corrected invoice A$2,740</div></td>
+            </tr>
+            <tr style="border-top: 1px solid #E2E8F0;">
+              <td style="padding: 14px 20px;"><input type="checkbox" aria-label="Select INV-1030"></td>
+              <td style="padding: 14px 12px; font-weight: 500;">Bella's Café</td>
+              <td style="padding: 14px 12px; color: #64748B;">INV-1030</td>
+              <td style="padding: 14px 12px; text-align: right; font-variant-numeric: tabular-nums;">A$3,200.00</td>
+              <td style="padding: 14px 12px;">12 days</td>
+              <td style="padding: 14px 12px;"><span style="display: inline-flex; padding: 3px 10px; border-radius: 999px; background: #DCFCE7; color: #15803D; font-size: 12px; font-weight: 600;">Probably forgot</span><div style="font-size: 12px; color: #64748B; margin-top: 4px;">Paid on time 24 of 24 invoices over 2 years · no reply, no dispute</div></td>
+              <td style="padding: 14px 12px;">Sarah → customer</td>
+              <td style="padding: 14px 20px;"><a href="EmailApproval.html" style="font-weight: 600;">Approve friendly nudge</a><div style="font-size: 12px; color: #64748B;">Warm tone · pay link included</div></td>
+            </tr>
+            <tr style="border-top: 1px solid #E2E8F0;">
+              <td style="padding: 14px 20px;"><input type="checkbox" aria-label="Select INV-1026"></td>
+              <td style="padding: 14px 12px; font-weight: 500;">Golden Noodle House</td>
+              <td style="padding: 14px 12px; color: #64748B;">INV-1026</td>
+              <td style="padding: 14px 12px; text-align: right; font-variant-numeric: tabular-nums;">A$3,400.00</td>
+              <td style="padding: 14px 12px;">21 days</td>
+              <td style="padding: 14px 12px;"><span style="display: inline-flex; padding: 3px 10px; border-radius: 999px; background: #FEF3C7; color: #B45309; font-size: 12px; font-weight: 600;">Cash-flow trouble</span><div style="font-size: 12px; color: #64748B; margin-top: 4px;">Reply 12 Oct: “roadworks out front, half our customers are gone”</div></td>
+              <td style="padding: 14px 12px;">Tony approves</td>
+              <td style="padding: 14px 20px;"><a href="#plan-1026" style="font-weight: 600;">Offer 2 × A$1,700 plan</a><div style="font-size: 12px; color: #64748B;">Instalments 20 Oct and 3 Nov · routine reminders stop</div></td>
+            </tr>
+            <tr style="border-top: 1px solid #E2E8F0;">
+              <td style="padding: 14px 20px;"><input type="checkbox" aria-label="Select INV-1019"></td>
+              <td style="padding: 14px 12px; font-weight: 500;">Harbourside Hotel</td>
+              <td style="padding: 14px 12px; color: #64748B;">INV-1019</td>
+              <td style="padding: 14px 12px; text-align: right; font-variant-numeric: tabular-nums;">A$3,300.00</td>
+              <td style="padding: 14px 12px; color: #B91C1C; font-weight: 500;">45 days</td>
+              <td style="padding: 14px 12px;"><span style="display: inline-flex; padding: 3px 10px; border-radius: 999px; background: #FEE2E2; color: #B91C1C; font-size: 12px; font-weight: 600;">Habitual late payer</span><div style="font-size: 12px; color: #64748B; margin-top: 4px;">Median 45 days late over 8 invoices · 3 reminders unanswered</div></td>
+              <td style="padding: 14px 12px;">Tony decides</td>
+              <td style="padding: 14px 20px;"><a href="VoiceCall.html" style="font-weight: 600;">Call AP, then change terms</a><div style="font-size: 12px; color: #64748B;">3 emails ignored → AI voice call, approved by Tony</div></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
+          <span>5 of 5 cases · Bank feed synced 6:05 AM · Every case re-diagnosed when new data arrives</span>
+          <span>Only 1 of 5 gets a reminder email today</span>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

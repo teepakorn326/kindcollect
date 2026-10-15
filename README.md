@@ -1,1 +1,34 @@
-# kindcollect
+# KindCollect
+
+*Get paid, without the awkward conversation.* An AI receivables workflow for small suppliers that
+diagnoses **why** an invoice is unpaid and fixes the cause. Hackathon build — read `CLAUDE.md` and
+`docs/HANDOFF.md` first.
+
+## 5-minute setup
+
+1. **Tools:** Node 20+ and pnpm 9 (`npm i -g pnpm@9`).
+2. **Install:** `pnpm install`
+3. **Env:** `cp .env.example .env` and fill in `DATABASE_URL` / `DIRECT_URL` (Supabase, Sydney) and
+   `ANTHROPIC_API_KEY`. Keep `DEMO_MODE=true`. Vapi and Resend keys are optional until those phases.
+4. **Database:** `pnpm db:push && pnpm db:seed` (available from Phase 2).
+5. **Run:** `pnpm dev` → http://localhost:3000/overview
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Next.js dev server |
+| `pnpm build` | Production build |
+| `pnpm test` | Vitest unit tests (`tests/`) |
+| `pnpm test:e2e` | Playwright demo spec (`e2e/`) against `BASE_URL` (default `http://localhost:3000`) |
+
+## Auth
+
+Set `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` to gate the whole app with HTTP Basic Auth. Everyone acts as
+the hard-coded user Sarah (bookkeeper).
+
+## Demo mode
+
+`DEMO_MODE=true` (default) logs outbound email instead of sending it and shows the "Demo data" badge.
+Bank feed, inbound email, documents and returns are seeded; rules, AI classification, DB writes and
+the audit trail are real.
