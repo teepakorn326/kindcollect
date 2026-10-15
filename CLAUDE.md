@@ -207,3 +207,8 @@ docs/{HANDOFF.md,mockups/}
 - 2026-10-16 · Invoice lines invented so each total is exact (catalogue: greens 47.00, tomatoes 52.00, strawberries 45.00 — the CreateInvoice prices). Harbourside history: days late 38/41/43/44/46/48/52/55 → median 45; INV-0978 and INV-1004 rejected for missing PO.
 - 2026-10-16 · Golden Noodle reminders are not paused at seed; Phase 6 plan approval pauses them. `PENDING_BANK_LINES` (Bella pays A$3,200) is the next line "Sync bank feed" inserts.
 - 2026-10-16 · Supabase project is in ap-southeast-1 (Singapore), not Sydney. `DATABASE_URL` = transaction pooler :6543 `?pgbouncer=true`, `DIRECT_URL` = session pooler :5432 (the `db.<ref>.supabase.co` host is IPv6-only). Full reset takes ~18 s.
+- 2026-10-16 · Rules take `today` as a parameter (pure); callers pass `today()` from `lib/clock.ts`. `queueOrder(cases, today)`: a commitment already due ranks 3rd; a future commitment ranks last (waiting); `blocked_on_customer_po` without a commitment sits between cash-flow and habitual.
+- 2026-10-16 · "Open dispute" for `sendGuard` = an unresolved case with cause `invoice_issue_ours`. Zero-value/ignored bank lines never block.
+- 2026-10-16 · `matchPayment` returns its own `checks[]` (shown verbatim on Payment Matching). A reference naming a paid/unknown/other-customer invoice is a warning, never trusted; a tie on amount = no match.
+- 2026-10-16 · `threeWayCheck`: missing PO (requiresPo) and qty ≠ delivery note are blockers; a line note ("Keep 24 and explain") downgrades a mismatch to a warning; billing the delivered qty is fine even if the PO ordered more.
+- 2026-10-16 · `lib/status.ts`: `blocked_on_customer_po` uses the error tone (tokens: "blocked"); "Already in the bank" bucket is neutral grey as in the Overview mockup.
