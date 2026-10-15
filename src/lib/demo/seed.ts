@@ -536,6 +536,15 @@ export const PENDING_BANK_LINES = [
     reference: "INV1030",
     description: "EFT BELLAS CAFE INV1030",
   },
+  {
+    id: "pay-noodle-1410",
+    customerId: C.noodle,
+    date: "2026-10-14",
+    amountCents: 170000,
+    payerName: "GOLDEN NOODLE",
+    reference: "1026 INST 1",
+    description: "EFT GOLDEN NOODLE 1026 INST 1",
+  },
 ] as const;
 
 /**
