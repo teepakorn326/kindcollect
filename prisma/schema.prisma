@@ -166,6 +166,7 @@ model Customer {
   calls        Call[]
   auditEvents  AuditEvent[]
   tasks        Task[]
+  documents    Document[]
 
   @@index([businessId])
 }
@@ -427,6 +428,29 @@ model Call {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   case     Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
   invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+enum DocumentKind {
+  purchase_order
+  delivery_note
+}
+
+/// Seeded customer documents used by threeWayCheck. lines: [{ description, quantity, unitPriceCents? }] (integer cents)
+model Document {
+  id         String       @id
+  businessId String
+  customerId String
+  kind       DocumentKind
+  number     String
+  poNumber   String?
+  date       DateTime
+  fileName   String
+  signedBy   String?
+  lines      Json
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
 }
 
 enum TaskStatus {

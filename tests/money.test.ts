@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addCents, allocate, formatAmount, formatAud, MoneyError, multiplyCents, subtractCents } from "@/lib/money";
+import { addCents, allocate, formatAmount, formatAud, MoneyError, multiplyCents, parseAmountToCents, subtractCents } from "@/lib/money";
 
 describe("addCents / subtractCents / multiplyCents", () => {
   it("adds integer cents", () => {
@@ -87,5 +87,18 @@ describe("formatAud", () => {
     expect(formatAud(-421000)).toBe("−A$4,210.00");
     expect(formatAmount(-421000)).toBe("-4,210.00");
     expect(formatAmount(300000)).toBe("3,000.00");
+  });
+});
+
+describe("parseAmountToCents", () => {
+  it("parses typed amounts to integer cents", () => {
+    expect(parseAmountToCents("47.00")).toBe(4700);
+    expect(parseAmountToCents("3,000")).toBe(300000);
+    expect(parseAmountToCents("A$1,248.5")).toBe(124850);
+  });
+  it("rejects negatives, letters and sub-cent precision", () => {
+    expect(parseAmountToCents("-1")).toBeNull();
+    expect(parseAmountToCents("abc")).toBeNull();
+    expect(parseAmountToCents("1.005")).toBeNull();
   });
 });

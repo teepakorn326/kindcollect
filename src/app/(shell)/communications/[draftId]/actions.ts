@@ -141,3 +141,27 @@ export async function approveAndSend(input: z.infer<typeof writeSchema>): Promis
   revalidatePath("/", "layout");
   return { ok: true, demoOnly };
 }
+
+/** "Ask Tony to review": a Task for Tony with the current draft. Nothing is sent. */
+export async function askTonyToReview(input: { draftId: string }): Promise<WriteResult> {
+  const m = await db.message.findUnique({ where: { id: input.draftId }, include: { customer: true } });
+  if (!m || (m.status !== "draft" && m.status !== "held")) return { ok: false, error: "This draft can no longer be reviewed." };
+  const open = await db.task.findFirst({ where: { status: "open", data: { path: ["messageId"], equals: m.id } } });
+  if (open) return { ok: false, error: "Already waiting for Tony's review." };
+  await db.$transaction([
+    db.task.create({
+      data: {
+        businessId: m.customer.businessId, customerId: m.customerId, caseId: m.caseId, assignee: "Tony",
+        title: `Review the email to ${m.customer.name}`, detail: m.subject, createdBy: currentUser.name, data: { messageId: m.id },
+      },
+    }),
+    db.auditEvent.create({
+      data: {
+        businessId: m.customer.businessId, caseId: m.caseId, customerId: m.customerId, invoiceId: m.invoiceId, at: now(), actor: currentUser.name,
+        type: "review_requested", summary: "Sent to Tony for review", detail: m.subject,
+      },
+    }),
+  ]);
+  revalidatePath(`/communications/${m.id}`);
+  return { ok: true };
+}

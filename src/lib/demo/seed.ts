@@ -470,6 +470,30 @@ export async function seedDemo(db: PrismaClient): Promise<SeedCounts> {
     ],
   });
 
+  // Create Invoice demo (INV-1034): PO and this morning's delivery note for Harbourside — 24 ordered, 22 delivered
+  await db.document.createMany({
+    data: [
+      {
+        id: "doc-hh-po-2291", businessId: B, customerId: C.harbour, kind: "purchase_order", number: "HH-PO-2291", poNumber: "HH-PO-2291",
+        date: dateOnly("2026-10-10"), fileName: "PO-HH-PO-2291.pdf",
+        lines: [
+          { description: P.greens.d, quantity: 30, unitPriceCents: P.greens.c },
+          { description: P.tomatoes.d, quantity: 24, unitPriceCents: P.tomatoes.c },
+          { description: P.strawberries.d, quantity: 14, unitPriceCents: P.strawberries.c },
+        ],
+      },
+      {
+        id: "doc-dn-0931", businessId: B, customerId: C.harbour, kind: "delivery_note", number: "DN-0931", poNumber: "HH-PO-2291",
+        date: sydney("2026-10-13", "05:40"), fileName: "Delivery-note-DN-0931.pdf", signedBy: "Harbourside receiving dock",
+        lines: [
+          { description: P.greens.d, quantity: 30 },
+          { description: P.tomatoes.d, quantity: 22 },
+          { description: P.strawberries.d, quantity: 14 },
+        ],
+      },
+    ],
+  });
+
   await db.call.create({
     data: {
       id: DEMO_IDS.harbourCall, customerId: C.harbour, caseId: K.harbour, invoiceId: "inv-1019",
@@ -513,13 +537,13 @@ export async function seedDemo(db: PrismaClient): Promise<SeedCounts> {
     ],
   });
 
-  const [business, users, customers, invoices, invoiceLines, payments, allocations, returns, cases, evidence, messages, calls, auditEvents, aiResults] =
+  const [business, users, customers, invoices, invoiceLines, payments, allocations, returns, cases, evidence, messages, calls, auditEvents, aiResults, documents] =
     await Promise.all([
       db.business.count(), db.user.count(), db.customer.count(), db.invoice.count(), db.invoiceLine.count(),
       db.payment.count(), db.allocation.count(), db.return.count(), db.case.count(), db.evidence.count(),
-      db.message.count(), db.call.count(), db.auditEvent.count(), db.aiResult.count(),
+      db.message.count(), db.call.count(), db.auditEvent.count(), db.aiResult.count(), db.document.count(),
     ]);
-  return { business, users, customers, invoices, invoiceLines, payments, allocations, returns, cases, evidence, messages, calls, auditEvents, aiResults };
+  return { business, users, customers, invoices, invoiceLines, payments, allocations, returns, cases, evidence, messages, calls, auditEvents, aiResults, documents };
 }
 
 /**

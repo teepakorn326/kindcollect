@@ -28,11 +28,16 @@ export default async function PaymentsPage() {
 
   return (
     <>
-      <div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+       <div>
         <h1 className="text-[28px] font-bold tracking-[-0.02em]">Payments</h1>
         <p className="mt-1 text-[13px] text-kc-muted">
           Bank statement · Fresh Harvest Produce{lastSync && <> · Feed synced {formatDay(lastSync)} {formatTime(lastSync)}</>} · Demo data
         </p>
+       </div>
+        <a href="/api/export/journal.csv" className="text-[13px] font-semibold" download>
+          Export journal (CSV)
+        </a>
       </div>
       <section className="overflow-hidden rounded-kc-card border border-kc-border bg-kc-surface shadow-kc-card">
         <table className="w-full text-sm">

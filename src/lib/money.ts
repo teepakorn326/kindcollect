@@ -110,3 +110,12 @@ export function splitCents(cents: number, parts: number): number[] {
   const base = Math.floor(cents / parts);
   return Array.from({ length: parts }, (_, i) => (i === parts - 1 ? cents - base * (parts - 1) : base));
 }
+
+/** "3,000.00" / "47" / "47.5" → cents; null when not a non-negative amount with ≤ 2 decimals. */
+export function parseAmountToCents(input: string): number | null {
+  const s = input.replace(/[,\s]|^A?\$/g, "");
+  if (!/^\d+(\.\d{0,2})?$/.test(s)) return null;
+  const [whole, frac = ""] = s.split(".");
+  const cents = Number(whole) * 100 + Number(frac.padEnd(2, "0"));
+  return Number.isSafeInteger(cents) ? cents : null;
+}

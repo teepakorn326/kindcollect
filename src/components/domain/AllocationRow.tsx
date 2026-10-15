@@ -2,15 +2,11 @@
 
 import { Input } from "@/components/ui/input";
 import { MoneyValue } from "@/components/domain/MoneyValue";
+import { parseAmountToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
-/** Parse "3,000.00" → 300000 cents; null when not a valid non-negative amount with ≤ 2 decimals. */
-export function parseCents(input: string): number | null {
-  const s = input.replace(/[,\s]/g, "");
-  if (!/^\d+(\.\d{0,2})?$/.test(s)) return null;
-  const [whole, frac = ""] = s.split(".");
-  return Number(whole) * 100 + Number(frac.padEnd(2, "0"));
-}
+/** Parse "3,000.00" → 300000 cents (lib/money). */
+export const parseCents = parseAmountToCents;
 
 export const centsToInput = (cents: number) =>
   new Intl.NumberFormat("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);

@@ -11,7 +11,7 @@ import { SendGuard } from "@/components/domain/SendGuard";
 import { toast } from "@/hooks/use-toast";
 import { draftAmountIssues } from "@/lib/rules";
 import { cn } from "@/lib/utils";
-import { approveAndSend, redraft, saveDraft } from "@/app/(shell)/communications/[draftId]/actions";
+import { approveAndSend, askTonyToReview, redraft, saveDraft } from "@/app/(shell)/communications/[draftId]/actions";
 
 type Tone = "warm" | "neutral" | "firm";
 export type ComposerFact = { id: string; text: string; source: string };
@@ -227,7 +227,17 @@ export function EmailComposer({
           <Button variant="outline" size="lg" onClick={save} disabled={saving || drafting}>
             {saving ? "Saving…" : "Save draft"}
           </Button>
-          <Button variant="outline" size="lg" disabled title="Tasks for Tony arrive with Customer Account (Phase 9)">
+          <Button
+            variant="outline"
+            size="lg"
+            disabled={saving || drafting}
+            onClick={() =>
+              startSave(async () => {
+                const r = await askTonyToReview({ draftId });
+                toast(r.ok ? { title: "Sent to Tony for review", description: "A task is waiting for him. Nothing was emailed." } : { variant: "destructive", title: "Not sent to Tony", description: r.error });
+              })
+            }
+          >
             Ask Tony to review
           </Button>
           <div className="flex-1" />
