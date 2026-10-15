@@ -35,17 +35,26 @@ function isDemoMode(): boolean {
   return (process.env.DEMO_MODE ?? "true") !== "false";
 }
 
-/** Current instant. In demo mode: DEMO_DATE + real Sydney time of day. */
+/**
+ * Current instant. In demo mode: DEMO_DATE + real Sydney time of day, never earlier than 06:10
+ * (the seeded bank sync is 06:05, so new events always land after it). Before 06:10 the clock runs
+ * from 06:10 at 1/10 speed, which keeps it monotonic.
+ */
 export function now(): Date {
   const real = new Date();
   if (!isDemoMode()) return real;
-  const time = new Intl.DateTimeFormat("en-GB", {
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: TZ,
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
-  }).format(real);
-  return sydney(DEMO_DATE, time);
+  }).formatToParts(real);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+  const msOfDay = ((get("hour") % 24) * 3600 + get("minute") * 60 + get("second")) * 1000 + real.getMilliseconds();
+  const floor = (6 * 60 + 10) * 60_000;
+  const ms = msOfDay >= floor ? msOfDay : floor + Math.floor(msOfDay / 10);
+  return new Date(sydney(DEMO_DATE).getTime() + ms);
 }
 
 /** The current demo/real day as a date-only value. */

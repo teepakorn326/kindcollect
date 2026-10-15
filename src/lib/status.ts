@@ -140,6 +140,8 @@ const auditTones: Record<string, Tone> = {
   call_outcome_confirmed: "review",
   send_blocked: "error",
   reminder_cancelled: "neutral",
+  case_resolved: "success",
+  match_rejected: "review",
 };
 
 export function auditTone(type: string): Tone {

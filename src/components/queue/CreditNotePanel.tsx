@@ -93,7 +93,7 @@ export function CreditNotePanel({
         if (!res.ok) return fail(res);
         toast({ title: "Case re-opened for review", description: "Diagnosis marked as not a valid return." });
       }
-      setConfirm(null);
+      // keep the dialog on "Saving…" until the refreshed page arrives
       router.refresh();
     });
 

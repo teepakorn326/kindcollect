@@ -95,6 +95,14 @@ export function extractInvoiceNumber(reference: string): string | null {
   return m ? `INV-${m[1].padStart(4, "0")}` : null;
 }
 
+/** "INV-1013" vs "INV-1031": same digits, different order → a likely typo by the payer. */
+export function isDigitTransposition(a: string, b: string): boolean {
+  const da = a.replace(/\D/g, "");
+  const db = b.replace(/\D/g, "");
+  if (!da || da === db || da.length !== db.length) return false;
+  return [...da].sort().join("") === [...db].sort().join("");
+}
+
 /**
  * payer matches a customer AND amount equals exactly one open invoice → "possible match".
  * The typed reference is reported but never trusted when it names a paid or unknown invoice.

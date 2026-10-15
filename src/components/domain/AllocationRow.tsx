@@ -12,30 +12,39 @@ export function parseCents(input: string): number | null {
   return Number(whole) * 100 + Number(frac.padEnd(2, "0"));
 }
 
+export const centsToInput = (cents: number) =>
+  new Intl.NumberFormat("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
+
+export const ALLOCATION_GRID = "grid grid-cols-[22px_1fr_96px_128px] items-center gap-3";
+
 /**
  * One invoice in a payment allocation. Validates ≤ outstanding and ≤ unallocated as you type;
- * the authoritative check is allocate() in lib/money.ts, re-run on the server.
+ * allocate() in lib/money.ts is the authoritative check (run live by the panel and again on the server).
  */
 export function AllocationRow({
   invoice,
   proposedCents,
   unallocatedCents,
+  checked,
   value,
   onChange,
-  disabled,
+  onCheckedChange,
 }: {
-  invoice: { id: string; number: string; outstandingCents: number; note: React.ReactNode };
+  invoice: { id: string; number: string; outstandingCents: number; note: React.ReactNode; muted?: boolean };
   proposedCents: number;
-  /** receipt cents not allocated to other rows */
+  /** receipt cents not taken by other rows */
   unallocatedCents: number;
+  checked: boolean;
   value: string;
-  onChange: (value: string, cents: number | null) => void;
-  disabled?: boolean;
+  onChange: (value: string) => void;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   const cents = parseCents(value);
-  const error =
-    cents === null
-      ? "Enter an amount like 3000.00"
+  const nothingOwed = invoice.outstandingCents === 0;
+  const error = !checked
+    ? null
+    : cents === null
+      ? "Enter an amount like 3,000.00"
       : cents > invoice.outstandingCents
         ? "More than this invoice's balance"
         : cents > unallocatedCents
@@ -43,30 +52,43 @@ export function AllocationRow({
           : null;
 
   return (
-    <tr className="border-t border-kc-border align-top">
-      <td className="py-3 pr-3">
-        <div className="font-semibold">{invoice.number}</div>
-        <div className="text-xs text-kc-muted">{invoice.note}</div>
-      </td>
-      <td className="py-3 pr-3 text-right">
-        <MoneyValue cents={invoice.outstandingCents} />
-      </td>
-      <td className="py-3">
-        <label className="flex items-center gap-1.5">
+    <div>
+      <label
+        className={cn(
+          ALLOCATION_GRID,
+          "rounded-[10px] border p-3",
+          invoice.muted || nothingOwed ? "border-dashed border-kc-muted/40 bg-kc-bg text-kc-muted" : "border-kc-border",
+          error && "border-kc-status-error"
+        )}
+      >
+        <input
+          type="checkbox"
+          className="size-[18px] accent-kc-primary"
+          checked={checked}
+          disabled={nothingOwed}
+          onChange={(e) => onCheckedChange(e.target.checked)}
+          aria-label={`Allocate to ${invoice.number}`}
+        />
+        <span>
+          <span className="font-semibold text-kc-text">{invoice.number}</span>
+          <span className="block text-xs">{invoice.note}</span>
+        </span>
+        <MoneyValue cents={invoice.outstandingCents} className="text-right" />
+        <span className="flex items-center justify-end gap-1.5">
           <span className="text-kc-muted">A$</span>
           <Input
             inputMode="decimal"
-            aria-label={`Allocate to ${invoice.number}`}
+            aria-label={`Amount for ${invoice.number}`}
             aria-invalid={!!error}
-            value={value}
-            disabled={disabled}
-            placeholder={(proposedCents / 100).toFixed(2)}
-            onChange={(e) => onChange(e.target.value, parseCents(e.target.value))}
-            className={cn("h-9 w-32 text-right tabular-nums", error && "border-kc-status-error")}
+            value={checked ? value : "0.00"}
+            disabled={!checked}
+            placeholder={centsToInput(proposedCents)}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-9 w-[96px] text-right tabular-nums disabled:bg-kc-border/50"
           />
-        </label>
-        {error && <p className="mt-1 text-xs text-kc-status-error">{error}</p>}
-      </td>
-    </tr>
+        </span>
+      </label>
+      {error && <p className="mt-1 px-3 text-xs text-kc-status-error">{error}</p>}
+    </div>
   );
 }

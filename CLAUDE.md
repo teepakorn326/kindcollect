@@ -219,3 +219,10 @@ docs/{HANDOFF.md,mockups/}
 - 2026-10-16 · "Not a valid return": `diagnosisConfirmed=false`, status `needs_review`, audit `diagnosis_rejected`; diagnosis shown struck-through with a "Needs review" chip.
 - 2026-10-16 · "Weekly summary for Tony" and "Re-diagnose all" render disabled until Phase 6 (AI) — no fake behaviour.
 - 2026-10-16 · Evidence cards newest first; documents listed under "Related documents"; source links open dialogs (original email, thread, returns record, invoice lines).
+- 2026-10-16 · Payment Matching: proposal = `matchPayment()` on the receipt's remaining amount; rows = target invoice (pre-filled), the referenced invoice (dashed, nothing owed), and — after "Edit allocation" — the customer's other open invoices. `allocate()` validates live in the browser and again inside the server transaction.
+- 2026-10-16 · Confirm match: Allocation rows, invoice balance → 0 ⇒ `paid` (paidAt = receipt date), payment `allocated` when fully used, held reminders → `cancelled`, paid invoices' cases → `resolved`, audit `payment_matched` (journal Dr Suspense / Cr AR) + `reminder_cancelled` + `case_resolved`. Summary after confirm is rendered from DB rows. "Thank-you note" is mentioned only as optional (no fake button).
+- 2026-10-16 · "Not a match": receipt stays unallocated, `paid_not_matched` case → `needs_review`, audit `match_rejected`; page then shows a notice and stops pre-filling the suggestion.
+- 2026-10-16 · Stale banner: TanStack Query polls `GET /api/payments/[id]/state` every 5 s and compares receipt/invoice `updatedAt` + balance with the page's fingerprint; Confirm is disabled while stale; own writes are suppressed via `OwnWriteProvider`. Server re-checks the same fingerprint. Added `Payment.updatedAt`.
+- 2026-10-16 · Confirm dialogs stay on "Saving…" until the refreshed page arrives (no flash of stale UI).
+- 2026-10-16 · `/payments` = bank statement list (sidebar link + "Open full statement"). "Digits are transposed" is computed by `isDigitTransposition()`.
+- 2026-10-16 · Demo clock never reads earlier than 06:10 on 13 Oct (after the seeded 06:05 bank sync).

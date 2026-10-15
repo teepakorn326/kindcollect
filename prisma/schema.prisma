@@ -228,6 +228,7 @@ model Payment {
   status      PaymentStatus
   syncedAt    DateTime
   createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
 
   business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer    Customer?    @relation(fields: [customerId], references: [id])

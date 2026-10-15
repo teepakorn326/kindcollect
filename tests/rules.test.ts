@@ -3,6 +3,7 @@ import { dateOnly, daysOverdue } from "@/lib/clock";
 import {
   creditNote,
   extractInvoiceNumber,
+  isDigitTransposition,
   hasBlockers,
   matchPayment,
   pauseReminders,
@@ -89,6 +90,12 @@ describe("matchPayment", () => {
       invoices
     );
     expect(r).toMatchObject({ kind: "possible_match", invoiceId: "inv-1030", referenceStatus: "open_invoice" });
+  });
+
+  it("spots transposed digits (INV-1013 typed for INV-1031)", () => {
+    expect(isDigitTransposition("INV-1013", "INV-1031")).toBe(true);
+    expect(isDigitTransposition("INV-1031", "INV-1031")).toBe(false);
+    expect(isDigitTransposition("INV-1013", "INV-1030")).toBe(false);
   });
 
   it("parses invoice numbers out of free-text references", () => {
