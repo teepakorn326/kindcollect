@@ -1,7 +1,9 @@
 // KindCollect data model — CLAUDE.md §7. All money is integer cents (Int), currency "AUD".
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // one SQL query per include (LATERAL joins) instead of one round trip per relation — the DB is remote
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

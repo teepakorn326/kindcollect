@@ -96,4 +96,11 @@
   html {
     @apply font-sans;
   }
+  /* mockups: a{color:#0F766E} a:hover{color:#115E59}; utility classes still override */
+  a {
+    color: var(--kc-color-primary);
+  }
+  a:hover {
+    color: var(--kc-color-primary-hover);
+  }
 }

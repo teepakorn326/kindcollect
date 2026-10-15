@@ -6,6 +6,7 @@ import {
   hasBlockers,
   matchPayment,
   pauseReminders,
+  proposePaymentPlan,
   queueOrder,
   sendGuard,
   threeWayCheck,
@@ -269,6 +270,18 @@ describe("threeWayCheck", () => {
 
   it("does not require a PO for customers without requiresPo", () => {
     expect(threeWayCheck({ poNumber: null, lines: [] }, { requiresPo: false })).toEqual([]);
+  });
+});
+
+describe("proposePaymentPlan", () => {
+  it("splits Golden Noodle's A$3,400 into 2 × A$1,700 on 20 Oct and 3 Nov", () => {
+    const plan = proposePaymentPlan(340000, TODAY);
+    expect(plan.map((p) => p.amountCents)).toEqual([170000, 170000]);
+    expect(plan.map((p) => p.dueDate.toISOString().slice(0, 10))).toEqual(["2026-10-20", "2026-11-03"]);
+  });
+
+  it("puts odd cents on the last instalment", () => {
+    expect(proposePaymentPlan(100001, TODAY, { instalments: 3 }).map((p) => p.amountCents)).toEqual([33333, 33333, 33335]);
   });
 });
 

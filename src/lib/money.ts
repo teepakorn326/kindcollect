@@ -102,3 +102,11 @@ export function formatAmount(cents: number): string {
   assertCents(cents);
   return `${cents < 0 ? "-" : ""}${withCents.format(Math.abs(cents) / 100)}`;
 }
+
+/** Split cents into n integer parts; any remainder cents go on the last part. 340000 / 2 → [170000, 170000]. */
+export function splitCents(cents: number, parts: number): number[] {
+  assertCents(cents);
+  if (!Number.isSafeInteger(parts) || parts < 1) throw new MoneyError(`parts must be a positive integer, got ${parts}`);
+  const base = Math.floor(cents / parts);
+  return Array.from({ length: parts }, (_, i) => (i === parts - 1 ? cents - base * (parts - 1) : base));
+}

@@ -419,20 +419,20 @@ export async function seedDemo(db: PrismaClient): Promise<SeedCounts> {
   await db.evidence.createMany({
     data: [
       {
-        id: "ev-city-bank", caseId: K.city, type: "bank", title: "Bank feed · receipt",
+        id: "ev-city-bank", caseId: K.city, type: "bank", title: "Bank receipt",
         excerpt: "12 Oct · EFT CITY CATERING CO PTY LTD · INV-1013 · A$3,000.00", highlight: "INV-1013",
         sourceRef: `bank:${DEMO_IDS.cityPayment}`, occurredAt: dateOnly("2026-10-12"), paymentId: DEMO_IDS.cityPayment,
       },
       {
-        id: "ev-sweet-reply", caseId: K.sweet, type: "email", title: "Customer reply · Hana Kim",
+        id: "ev-sweet-reply", caseId: K.sweet, type: "email", title: "Customer reply",
         excerpt: "Hi Tony, happy to pay but the invoice still has the 8 boxes of strawberries your driver took back on the 15th. Can you fix it and I'll pay the same day?",
-        highlight: "the 8 boxes of strawberries your driver took back on the 15th",
+        highlight: "8 boxes of strawberries your driver took back",
         sourceRef: "message:msg-sweet-reply", occurredAt: sydney("2026-10-08", "14:15"), messageId: "msg-sweet-reply",
       },
       {
-        id: "ev-sweet-return", caseId: K.sweet, type: "returns", title: "Returns log · Driver app",
-        excerpt: "RET-0211 · Sweet Bakery · ref INV-1028 · Strawberries 250g — 8 boxes — bruised · Signed: H. Kim · Driver: M. Rossi",
-        highlight: "8 boxes — bruised", sourceRef: "return:RET-0211", occurredAt: sydney("2026-09-15", "07:40"),
+        id: "ev-sweet-return", caseId: K.sweet, type: "returns", title: "Returns log",
+        excerpt: "RET-0211 · Sweet Bakery · ref INV-1028\nStrawberries 250g — 8 boxes — bruised\nSigned: H. Kim · Driver: M. Rossi",
+        highlight: "Strawberries 250g — 8 boxes — bruised", sourceRef: "return:RET-0211", occurredAt: sydney("2026-09-15", "07:40"),
         returnId: DEMO_IDS.sweetReturn,
       },
       {
@@ -451,7 +451,7 @@ export async function seedDemo(db: PrismaClient): Promise<SeedCounts> {
         highlight: "24 of 24", sourceRef: `customer:${C.bella}`, occurredAt: synced,
       },
       {
-        id: "ev-noodle-reply", caseId: K.noodle, type: "email", title: "Customer reply · Kevin Lau",
+        id: "ev-noodle-reply", caseId: K.noodle, type: "email", title: "Customer reply",
         excerpt: "Hi Tony, sorry I've been quiet. The council has had roadworks out front for three weeks — half our customers are gone. We will pay, we just can't do it all at once right now. Can we sort something out?",
         highlight: "roadworks out front for three weeks — half our customers are gone",
         sourceRef: "message:msg-noodle-reply", occurredAt: sydney("2026-10-12", "17:12"), messageId: "msg-noodle-reply",
@@ -489,27 +489,27 @@ export async function seedDemo(db: PrismaClient): Promise<SeedCounts> {
   const noodle = { caseId: K.noodle, customerId: C.noodle, invoiceId: "inv-1026" };
   const harbour = { caseId: K.harbour, customerId: C.harbour, invoiceId: "inv-1019" };
 
+  // Timeline sub-line renders as "<date> · <detail ?? actor>", so details stay short.
   await db.auditEvent.createMany({
     data: [
-      ev(sydney("2026-08-15", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", harbour, "INV-1019 · PO HH-PO-2251"),
-      ev(sydney("2026-09-05", "09:00"), "Sarah", "reminder_sent", "1st reminder sent", harbour, "warm tone · no reply"),
-      ev(sydney("2026-09-08", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", noodle, "INV-1026"),
-      ev(sydney("2026-09-12", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", sweet, "INV-1028 · 48 boxes strawberries, 20 mixed greens"),
-      ev(sydney("2026-09-15", "07:40"), "Driver app", "return_logged", "8 boxes returned", sweet, "RET-0211 · bruised · signed H. Kim"),
-      ev(sydney("2026-09-17", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", bella, "INV-1030"),
-      ev(sydney("2026-09-20", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", city, "INV-1031"),
-      ev(sydney("2026-09-22", "09:00"), "Sarah", "reminder_sent", "2nd reminder sent", harbour, "neutral tone · no reply"),
+      ev(sydney("2026-08-15", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", harbour),
+      ev(sydney("2026-09-05", "09:00"), "Sarah", "reminder_sent", "1st reminder sent", harbour, "warm · no reply"),
+      ev(sydney("2026-09-08", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", noodle),
+      ev(sydney("2026-09-12", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", sweet),
+      ev(sydney("2026-09-15", "07:40"), "Driver app", "return_logged", "8 boxes returned", sweet, "driver app"),
+      ev(sydney("2026-09-17", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", bella),
+      ev(sydney("2026-09-20", "08:00"), "Tony", "invoice_sent", "Delivered · invoice sent", city),
+      ev(sydney("2026-09-22", "09:00"), "Sarah", "reminder_sent", "2nd reminder sent", harbour, "neutral · no reply"),
       ev(sydney("2026-09-29", "09:00"), "Sarah", "reminder_sent", "Friendly reminder sent", noodle, "approved by Sarah"),
       ev(sydney("2026-10-03", "09:00"), "Sarah", "reminder_sent", "Friendly reminder sent", sweet, "approved by Sarah"),
       ev(sydney("2026-10-06", "09:00"), "Sarah", "reminder_sent", "Friendly reminder sent", city, "approved by Sarah"),
-      ev(sydney("2026-10-07", "09:00"), "Sarah", "reminder_sent", "3rd reminder sent", harbour, "firm tone · no reply · 45 days · 4th time this year"),
-      ev(sydney("2026-10-08", "14:15"), "Customer", "reply_received", "Customer replied", sweet, "disputes 8 returned boxes"),
-      ev(sydney("2026-10-08", "14:16"), "Rule", "reminders_paused", "Reminders paused", sweet, "rule: invoice disputed"),
-      ev(sydney("2026-10-12", "17:12"), "Customer", "reply_received", "Reply read", noodle, "“roadworks out front, half our customers are gone”"),
-      ev(sydney("2026-10-12", "17:13"), "AI", "case_classified", "Classified: cash-flow trouble", noodle, "suggested: 2-instalment plan"),
-      ev(synced, "Bank feed", "payment_received", "A$3,000 received · ref “INV-1013”", city, "EFT CITY CATERING CO PTY LTD · 12 Oct"),
+      ev(sydney("2026-10-07", "09:00"), "Sarah", "reminder_sent", "3rd reminder sent", harbour, "firm · no reply"),
+      ev(sydney("2026-10-08", "14:15"), "Rule", "reminders_paused", "Customer replied · reminders paused", sweet, "rule: invoice disputed"),
+      ev(sydney("2026-10-12", "17:12"), "Customer", "reply_received", "Customer replied", noodle, "“roadworks out front, half our customers are gone”"),
+      ev(sydney("2026-10-12", "17:13"), "AI", "case_classified", "Classified: cash-flow trouble", noodle, "plan suggested"),
+      ev(synced, "Bank feed", "payment_received", "A$3,000 received · ref “INV-1013”", city, "bank feed"),
       ev(synced, "Rule", "reminder_held", "Reminder held", city, "rule: amount matches an open invoice"),
-      ev(sydney("2026-10-13", "09:40"), "Tony", "call_approved", "Call script approved", harbour, "AI voice call to Accounts Payable"),
+      ev(sydney("2026-10-13", "09:40"), "Tony", "call_approved", "Call script approved", harbour, "approved by Tony"),
     ],
   });
 

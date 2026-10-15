@@ -1,7 +1,7 @@
 // Rules engine — CLAUDE.md §5. Pure functions: no DB, no clock reads (pass `today`), no AI.
 // The AI suggests a cause; these rules decide what is allowed and compute every number.
 import type { CaseCause, CaseStatus, InvoiceStatus, PaymentStatus } from "@prisma/client";
-import { addCents, assertCents, multiplyCents, type Currency } from "./money";
+import { addCents, assertCents, multiplyCents, splitCents, type Currency } from "./money";
 
 // ======================= queueOrder =======================
 
@@ -369,3 +369,27 @@ export function threeWayCheck(
 }
 
 export const hasBlockers = (issues: readonly ThreeWayIssue[]) => issues.some((i) => i.severity === "blocker");
+
+// ======================= proposePaymentPlan =======================
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Cash-flow cases: split the balance into equal instalments, the first a week out, then every 14 days.
+ * INV-1026 on 13 Oct → 2 × 170000 on 20 Oct and 3 Nov.
+ */
+export function proposePaymentPlan(
+  balanceCents: number,
+  today: Date,
+  opts: { instalments?: number; firstAfterDays?: number; everyDays?: number } = {}
+): { sequence: number; dueDate: Date; amountCents: number }[] {
+  const n = opts.instalments ?? 2;
+  const first = opts.firstAfterDays ?? 7;
+  const every = opts.everyDays ?? 14;
+  if (balanceCents <= 0) throw new Error("Nothing to put on a plan");
+  return splitCents(balanceCents, n).map((amountCents, i) => ({
+    sequence: i + 1,
+    dueDate: new Date(today.getTime() + (first + i * every) * DAY_MS),
+    amountCents,
+  }));
+}
