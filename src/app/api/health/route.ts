@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { databaseUrl, db } from "@/lib/db";
+import { appUrl } from "@/lib/app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export async function GET() {
       demoMode: (process.env.DEMO_MODE ?? "true") !== "false",
       anthropicKey: !!process.env.ANTHROPIC_API_KEY,
       basicAuth: !!(process.env.BASIC_AUTH_USER && process.env.BASIC_AUTH_PASS),
-      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
+      appUrl: appUrl(),
     },
     { status: dbStatus === "ok" ? 200 : 503 }
   );

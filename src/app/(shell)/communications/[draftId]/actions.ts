@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { now } from "@/lib/clock";
+import { appUrl } from "@/lib/app-url";
 import { currentUser } from "@/lib/current-user";
 import { draftAmountIssues, sendGuard } from "@/lib/rules";
 import { generateDraft, getDraftContext } from "@/lib/communications";
@@ -102,8 +103,7 @@ export async function approveAndSend(input: z.infer<typeof writeSchema>): Promis
   const issues = draftAmountIssues(`${d.subject}\n${d.body}`, ctx.allowedCents);
   if (issues.length) return { ok: false, error: `Amounts that don't match the invoice: ${issues.join(", ")}. Edit the message first.` };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const finalBody = d.body.replaceAll("[PAY LINK]", `${appUrl}/pay/${m.id}`);
+  const finalBody = d.body.replaceAll("[PAY LINK]", `${appUrl()}/pay/${m.id}`);
   const demoOnly = isDemoMode() || !process.env.RESEND_API_KEY;
 
   if (!demoOnly) {

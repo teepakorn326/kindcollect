@@ -5,6 +5,7 @@ import path from "node:path";
 import type { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { now, sydneyYmd } from "./clock";
+import { appUrl } from "./app-url";
 import { formatDate } from "./format";
 import { callGuard } from "./rules";
 import { runTool } from "./ai/client";
@@ -61,7 +62,7 @@ export async function startCall(callId: string) {
   const callee = process.env.VAPI_DEMO_CALLEE_NUMBER || call.phoneNumber.replace(/\s/g, "");
   if (!apiKey || !phoneNumberId) throw new CallError("Vapi is not configured (VAPI_API_KEY / VAPI_PHONE_NUMBER_ID). Use “Play recording”.", 503);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const base = appUrl();
   const secret = process.env.VAPI_WEBHOOK_SECRET ?? "";
   const inv = call.invoice;
   const variables = {
@@ -73,7 +74,7 @@ export async function startCall(callId: string) {
     due_date: formatDate(inv.dueDate),
   };
   const firstMessage = `Hi, this is an automated assistant calling on behalf of Tony at Fresh Harvest Produce. This call is recorded. I'm checking on invoice ${inv.number} for ${variables.amount_spoken}. Could I confirm it's with the right person?`;
-  const server = { url: `${appUrl}/api/vapi/webhook`, headers: { "x-vapi-secret": secret } };
+  const server = { url: `${base}/api/vapi/webhook`, headers: { "x-vapi-secret": secret } };
 
   const body = process.env.VAPI_ASSISTANT_ID
     ? {

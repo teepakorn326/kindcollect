@@ -52,6 +52,9 @@ test("Sarah's Monday — the five-case demo", async ({ page, request }) => {
     await confirmInDialog(page, /Approve/);
     // The confirmation line is rendered from Message.demoOnly in the DB
     await expect(page.getByText(/logged, not sent \(demo mode\)/)).toBeVisible({ timeout: 60_000 });
+    // the pay link in the logged email points at this deployment (not localhost) when run against one
+    const { host, hostname } = new URL(page.url());
+    await expect(page.locator("pre")).toContainText(hostname === "localhost" ? "/pay/msg-bella-nudge" : `https://${host}/pay/msg-bella-nudge`);
   });
 
   await test.step("Voice Call: page loads with the recording fallback", async () => {
